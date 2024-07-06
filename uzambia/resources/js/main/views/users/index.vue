@@ -57,18 +57,10 @@
                         {{ $t("common.delete") }}
                     </a-button>
                     <div>
-                        <a-button
-                            type="primary"
-                            @click="isModalVisible = true"
-                            danger
-                        >
+                        <a-button type="primary" @click="isModalVisible = true" danger>
                             Import Member Data
                         </a-button>
-                        <a-modal
-                            v-model:visible="isModalVisible"
-                            title="Import Member Data"
-                            @cancel="resetLoading"
-                        >
+                        <a-modal v-model:visible="isModalVisible" title="Import Member Data" @cancel="resetLoading">
                             <a-form @submit.prevent="handleSubmit">
                                 <a-form-item label="Select Import Period">
                                     <a-select v-model:value="selectedPeriod" placeholder="Select an import period">
@@ -78,7 +70,7 @@
                                     </a-select>
                                 </a-form-item>
                                 <a-form-item>
-                                    <a-button type="primary" html-type="submit" :loading="loading" >
+                                    <a-button type="primary" html-type="submit" :loading="loading">
                                         Submit
                                     </a-button>
                                 </a-form-item>
@@ -558,46 +550,51 @@ export default {
             }
         });
 
+
+
+
         const handleSubmit = async () => {
             if (selectedPeriod.value) {
+                loading.value = true;  // Set loading to true when the submit button is clicked
                 try {
                     const response = await axiosAdmin.get(`/period-api-data-import?period_id=${selectedPeriod.value}`);
-                    console.log('API Response:', response.data.data); // Log the response for debugging
+                    console.log('API Response:', response.data.data);
 
-                    if (response.status === 200 ) {
+                    if (response.status === 200) {
                         await setUrlData();
                         message.success(response.data.message || 'Data imported successfully.');
                         loading.value = false; // Stop loading spinner
                         isModalVisible.value = false; // Close the modal
-
                     } else {
                         message.error(response.data.message || 'Failed to import data.');
                         loading.value = false;
                     }
                 } catch (error) {
-                    console.error('API Error:', error); // Log the error for debugging
+                    console.error('API Error:', error);
                     message.error('An error occurred while importing data.');
+                    await setUrlData();
+                    loading.value = false;
                 }
             } else {
                 message.error('Please select an import period.');
+                loading.value = false;
             }
-            isModalVisible.value = false;
         };
-        // Reset loading state if modal is closed
+
         const resetLoading = () => {
             loading.value = false;
         };
-
         // api import modal End===========
         return {
             isModalVisible,
             importPeriods,
+            importPeriods,
             selectedPeriod,
             handleSubmit,
-            message,
             loading,
             resetLoading,
 
+            message,
             statusColors,
             userStatus,
             filterableColumns,
