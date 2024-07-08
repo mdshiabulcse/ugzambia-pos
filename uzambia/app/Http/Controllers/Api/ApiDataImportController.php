@@ -163,12 +163,12 @@ class ApiDataImportController extends Controller
         }
 
 //        // Find duplicates based on phone, name, and period_id
-        $duplicateUsers = User::select('phone', 'name', 'period_id', DB::raw('COUNT(*) as count'))
-            ->groupBy('phone', 'name')
-            ->having('count', '>', 1) // Having more than 1 occurrence means duplicates
-            ->get();
-dd($duplicateUsers);
-die();
+//        $duplicateUsers = User::select('phone', 'name', 'period_id', DB::raw('COUNT(*) as count'))
+//            ->groupBy('phone', 'name')
+//            ->having('count', '>', 1) // Having more than 1 occurrence means duplicates
+//            ->get();
+//dd($duplicateUsers);
+//die();
 //// Iterate through duplicates and delete except one (you can decide based on your logic)
 //        foreach ($duplicateUsers as $duplicateUser) {
 //            $usersToDelete = User::where('phone', $duplicateUser->phone)
