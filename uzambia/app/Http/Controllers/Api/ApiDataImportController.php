@@ -7,10 +7,11 @@ use App\Models\User;
 use App\Models\UserDetails;
 use App\Models\Warehouse;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
-
+use Exception;
 class ApiDataImportController extends Controller
 {
     /**
@@ -23,49 +24,57 @@ class ApiDataImportController extends Controller
         $response = Http::get('https://api.ugzambia.net/api/data-import/'.$periodId);
         $importData = $response->json()['data'];
 
+        $warehouseIds = Warehouse::pluck('id')->toArray();
 
-        $wereHouse=Warehouse::pluck('id')->toArray();
         try {
-            $importSuccess = true; // Set this based on your actual import logic
+            $importedUsers = []; // To keep track of imported users
 
-            if ($importSuccess) {
-                foreach ($importData as $data){
-                    // Check for duplicates based on period_id, name, and phone
-                    $existingUser = User::where('period_id', $periodId)
-                        ->where('name', $data['names'])
-                        ->where('phone', $data['nrcNo'])
-                        ->first();
+            foreach ($importData as $data) {
+                // Check if user already exists based on name, phone, and period_id
+                $existingUser = User::where('name', $data['names'])
+                    ->where('phone', $data['nrcNo'])
+                    ->first();
 
-                    if ($existingUser) {
-                        // If user already exists, skip to the next iteration
-                        continue;
-                    }
-
-                    $response=new User();
-                    $response->period_id = $data['periodName'];
-                    $response->name  = $data['names'];
-                    $response->phone  = $data['nrcNo'];
-                    $response->address  = $data['district'].','.$data['province'];
-                    $response->warehouse_id  = 1;
-                    $response->company_id  = 1;
-                    $response->save();
-                    foreach ($wereHouse as $wereHouseData) {
-                        $userDetailsData=new UserDetails();
-                        $userDetailsData->warehouse_id = $wereHouseData;
-                        $userDetailsData->user_id  = $response->id;
-                        $userDetailsData->opening_balance  = 0;
-                        $userDetailsData->opening_balance_type  = 'receive';
-                        $userDetailsData->save();
-                    }
-
+                if ($existingUser) {
+                    // If user already exists, skip to the next iteration
+                    continue;
                 }
-                return response()->json(['data' => $response,'status' => 200, 'message' => 'Data imported successfully.']);
-            } else {
-                return response()->json(['success' => false, 'message' => 'Data import failed.'], 500);
+
+                // Create new User record
+                $newUser = new User();
+                $newUser->period_id = $periodId;
+                $newUser->name = $data['names'];
+                $newUser->phone = $data['nrcNo'];
+                $newUser->address = $data['district'] . ',' . $data['province'];
+                $newUser->warehouse_id = 1; // Assuming default warehouse_id
+                $newUser->company_id = 1; // Assuming default company_id
+                $newUser->save();
+
+                // Save details for each warehouse
+                foreach ($warehouseIds as $warehouseId) {
+                    $userDetails = new UserDetails();
+                    $userDetails->warehouse_id = $warehouseId;
+                    $userDetails->user_id = $newUser->id;
+                    $userDetails->opening_balance = 0; // Example value, adjust as needed
+                    $userDetails->opening_balance_type = 'receive'; // Example type, adjust as needed
+                    $userDetails->save();
+                }
+
+                // Add the newly imported user to the list
+                $importedUsers[] = $newUser;
             }
+
+            return response()->json([
+                'data' => $importedUsers,
+                'status' => 200,
+                'message' => 'Data imported successfully.'
+            ]);
         } catch (\Exception $e) {
-            Log::error('Data import error: ' . $e->getMessage()).$e->getLine();
-            return response()->json(['success' => false, 'message' => 'An error occurred during data import.'], 500);
+            Log::error('Data import error: ' . $e->getMessage() . ' Line: ' . $e->getLine());
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred during data import.'
+            ], 500);
         }
     }
 
@@ -115,5 +124,72 @@ class ApiDataImportController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+    public function totalMember()
+    {
+        $response['data']=User::count();
+        return response()->json(['data' => $response,'status' => 200, 'message' => 'Data pull successfully.']);
+    }
+
+    public function duplicateDataRemove()
+    {
+        try {
+            // Step 1: Identify Duplicate User IDs
+            $duplicateUserIds = User::select('id')
+                ->selectRaw('MAX(id) as max_id')
+                ->from(DB::raw('(SELECT id, name, phone FROM users) as u'))
+                ->groupBy('name', 'phone')
+                ->havingRaw('COUNT(*) > 1')
+                ->pluck('max_id');
+
+            if ($duplicateUserIds->isEmpty()) {
+                return response()->json(['message' => 'No duplicate users found.']);
+            }
+
+            // Step 2: Delete Related Records in UserDetails
+            UserDetails::whereIn('user_id', $duplicateUserIds)->delete();
+
+            // Step 3: Delete Duplicate Records in User
+            User::whereIn('id', $duplicateUserIds)->delete();
+
+            return response()->json(['message' => 'Duplicate users removed successfully.']);
+        } catch (Exception $e) {
+            // Log the error for debugging
+            Log::error('Error removing duplicate users: ' . $e->getMessage());
+
+            // Return a response with the error message
+            return response()->json(['message' => 'An error occurred while removing duplicate users.', 'error' => $e->getMessage()], 500);
+        }
+
+//        // Find duplicates based on phone, name, and period_id
+        $duplicateUsers = User::select('phone', 'name', 'period_id', DB::raw('COUNT(*) as count'))
+            ->groupBy('phone', 'name')
+            ->having('count', '>', 1) // Having more than 1 occurrence means duplicates
+            ->get();
+dd($duplicateUsers);
+die();
+//// Iterate through duplicates and delete except one (you can decide based on your logic)
+//        foreach ($duplicateUsers as $duplicateUser) {
+//            $usersToDelete = User::where('phone', $duplicateUser->phone)
+//                ->where('name', $duplicateUser->name)
+//                ->where('period_id', $duplicateUser->period_id)
+//                ->orderBy('id', 'desc') // Order by id to keep the latest or earliest record
+//                ->skip(1) // Skip the first record (keep one, delete the rest)
+//                ->get();
+//
+//            foreach ($usersToDelete as $userToDelete) {
+//                // Delete associated UserDetails records
+//                UserDetails::where('user_id', $userToDelete->id)->delete();
+//
+//                // Delete the User record
+//                $userToDelete->delete();
+//            }
+//        }
+//
+//// Return success message or do something else as needed
+//        return response()->json([
+//            'message' => 'Duplicate records and associated UserDetails deleted successfully.'
+//        ]);
     }
 }

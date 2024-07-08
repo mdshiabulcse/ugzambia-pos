@@ -1,7 +1,7 @@
 <?php
-
+use Illuminate\Support\Facades\Route;
 use Examyou\RestAPI\Facades\ApiRoute;
-
+Route::get('duplicate-data-remove',[\App\Http\Controllers\Api\ApiDataImportController::class,'duplicateDataRemove']);
 // Admin Routes
 ApiRoute::group(['namespace' => 'App\Http\Controllers\Api'], function () {
     ApiRoute::get('all-langs', ['as' => 'api.extra.all-langs', 'uses' => 'AuthController@allEnabledLangs']);
@@ -23,6 +23,8 @@ ApiRoute::group(['namespace' => 'App\Http\Controllers\Api'], function () {
     ApiRoute::get('warehouses', ['as' => 'api.warehouses.index', 'uses' => 'WarehouseController@index']);
     ApiRoute::get('payment-modes', ['as' => 'api.payment-modes.index', 'uses' => 'PaymentModeController@index']);
     ApiRoute::get('period-api-data-import', ['as' => 'api.period-api-data-import.index', 'uses' => 'ApiDataImportController@index']);
+    ApiRoute::get('total-member', ['as' => 'api.total-member.totalMember', 'uses' => 'ApiDataImportController@totalMember']);
+
 
     ApiRoute::group(['middleware' => ['api.auth.check']], function () {
         ApiRoute::post('dashboard', ['as' => 'api.extra.dashboard', 'uses' => 'AuthController@dashboard']);

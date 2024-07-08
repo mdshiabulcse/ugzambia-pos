@@ -56,10 +56,10 @@
                         <template #icon><DeleteOutlined /></template>
                         {{ $t("common.delete") }}
                     </a-button>
-                    <div>
                         <a-button type="primary" @click="isModalVisible = true" danger>
                             Import Member Data
                         </a-button>
+                    <a-button><strong>Members: {{memberCount}}</strong></a-button>
                         <a-modal v-model:visible="isModalVisible" title="Import Member Data" @cancel="resetLoading">
                             <a-form @submit.prevent="handleSubmit">
                                 <a-form-item label="Select Import Period">
@@ -76,7 +76,7 @@
                                 </a-form-item>
                             </a-form>
                         </a-modal>
-                    </div>
+
                 </a-space>
             </a-col>
             <a-col :xs="24" :sm="24" :md="12" :lg="14" :xl="14">
@@ -580,6 +580,21 @@ export default {
                 loading.value = false;
             }
         };
+        const memberCount = ref(0);
+
+        const fetchMemberCount = async () => {
+            try {
+                const response = await axiosAdmin.get('/total-member');
+                memberCount.value = response.data.data;
+                await setUrlData();
+            } catch (error) {
+                console.error('Failed to fetch member count:', error);
+            }
+        };
+
+        onMounted(() => {
+            fetchMemberCount();
+        });
 
         const resetLoading = () => {
             loading.value = false;
@@ -588,11 +603,11 @@ export default {
         return {
             isModalVisible,
             importPeriods,
-            importPeriods,
             selectedPeriod,
             handleSubmit,
             loading,
             resetLoading,
+            memberCount,
 
             message,
             statusColors,
