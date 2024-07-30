@@ -10,12 +10,8 @@
                         Dashboard
                     </router-link>
                 </a-breadcrumb-item>
-                <a-breadcrumb-item>
-                    User
-                </a-breadcrumb-item>
-                <a-breadcrumb-item>
-                    Member
-                </a-breadcrumb-item>
+                <a-breadcrumb-item>User</a-breadcrumb-item>
+                <a-breadcrumb-item>Member</a-breadcrumb-item>
             </a-breadcrumb>
         </template>
     </AdminPageHeader>
@@ -35,7 +31,7 @@
             </a-form>
         </div>
 
-        <a-table :data-source="tableData" :columns="columns" row-key="id" :pagination="pagination" :loading="loading">
+        <a-table :data-source="tableData" :columns="columns" row-key="id" :pagination="false" :loading="loading">
             <template #action="{ record }">
                 <a-button @click="handleAction(record)" type="link">Action</a-button>
             </template>
@@ -52,7 +48,7 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import axios from 'axios';
 import AdminPageHeader from '../../../common/layouts/AdminPageHeader.vue';
@@ -92,14 +88,22 @@ export default {
             total: 0
         });
         const dateFormat = 'YYYY-MM-DD';
-        const loading = ref(false); // Loader state
+        const loading = ref(false);
 
         const fetchData = async () => {
-            loading.value = true; // Show loader
+            loading.value = true;
             try {
                 const { dateRange, search } = filters.value;
                 const startDate = dateRange ? dateRange[0].format(dateFormat) : '';
                 const endDate = dateRange ? dateRange[1].format(dateFormat) : '';
+
+                console.log('Fetching data with params:', {
+                    startDate,
+                    endDate,
+                    search,
+                    page: pagination.value.current,
+                    pageSize: pagination.value.pageSize
+                });
 
                 const response = await axios.get('http://127.0.0.1:8001/api/all-data-get', {
                     params: {
@@ -120,11 +124,12 @@ export default {
                 console.error('Fetch data error:', error);
                 message.error('Failed to fetch data.');
             } finally {
-                loading.value = false; // Hide loader
+                loading.value = false;
             }
         };
 
         const handlePageChange = (page) => {
+            console.log(`Page changed to: ${page}`);
             pagination.value.current = page;
             fetchData();
         };
@@ -137,12 +142,18 @@ export default {
             fetchData();
         });
 
+        // Watch filters for changes and fetch data
+        watch(filters, (newFilters) => {
+            pagination.value.current = 1; // Reset to first page on filter change
+            fetchData();
+        }, { deep: true });
+
         return {
             filters,
             tableData,
             columns,
             pagination,
-            loading, // Include loading state in return
+            loading,
             fetchData,
             handlePageChange,
             handleAction,
