@@ -19,21 +19,49 @@
     <admin-page-table-content>
         <div class="filters">
             <a-form :model="filters" layout="inline">
-                <a-form-item label="Date Range">
-                    <a-date-picker v-model="filters.dateRange" :format="dateFormat" />
+                <a-form-item label="Start Date">
+                    <input
+                        type="date"
+                        v-model="filters.startDate"
+                        @change="validateDates"
+                        class="custom-date-input"
+                    />
+                </a-form-item>
+                <a-form-item label="End Date">
+                    <input
+                        type="date"
+                        v-model="filters.endDate"
+                        @change="validateDates"
+                        class="custom-date-input"
+                    />
                 </a-form-item>
                 <a-form-item label="Search">
-                    <a-input v-model="filters.search" placeholder="Search" />
+                    <input
+                        type="text"
+                        v-model="filters.search"
+                        placeholder="Search"
+                        class="custom-input"
+                    />
                 </a-form-item>
                 <a-form-item>
                     <a-button type="primary" @click="fetchData">Search</a-button>
+                    <a-button type="default" @click="clearFilters" class="btn-refresh btn-warning">Refresh</a-button>
                 </a-form-item>
             </a-form>
         </div>
 
         <a-table :data-source="tableData" :columns="columns" row-key="id" :pagination="false" :loading="loading">
             <template #action="{ record }">
-                <a-button @click="handleAction(record)" type="link">Action</a-button>
+                <a-button
+                    :disabled="record.isMatching"
+                    :class="{
+            'btn-success': record.isMatching,
+            'btn-warning': !record.isMatching
+          }"
+                    @click="handleAction(record)"
+                >
+                    {{ record.isMatching ? 'Exist' : 'Add' }}
+                </a-button>
             </template>
         </a-table>
 
@@ -59,7 +87,8 @@ export default {
     },
     setup() {
         const filters = ref({
-            dateRange: null,
+            startDate: '',
+            endDate: '',
             search: ''
         });
         const tableData = ref([]);
@@ -87,15 +116,12 @@ export default {
             pageSize: 10,
             total: 0
         });
-        const dateFormat = 'YYYY-MM-DD';
         const loading = ref(false);
 
         const fetchData = async () => {
             loading.value = true;
             try {
-                const { dateRange, search } = filters.value;
-                const startDate = dateRange ? dateRange[0].format(dateFormat) : '';
-                const endDate = dateRange ? dateRange[1].format(dateFormat) : '';
+                const { startDate, endDate, search } = filters.value;
 
                 console.log('Fetching data with params:', {
                     startDate,
@@ -128,6 +154,21 @@ export default {
             }
         };
 
+        const validateDates = () => {
+            const { startDate, endDate } = filters.value;
+            if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+                message.error('Start Date cannot be after End Date.');
+                filters.value.endDate = '';
+            }
+        };
+
+        const clearFilters = () => {
+            filters.value.startDate = '';
+            filters.value.endDate = '';
+            filters.value.search = '';
+            fetchData(); // Fetch data after clearing filters
+        };
+
         const handlePageChange = (page) => {
             console.log(`Page changed to: ${page}`);
             pagination.value.current = page;
@@ -157,7 +198,8 @@ export default {
             fetchData,
             handlePageChange,
             handleAction,
-            dateFormat
+            validateDates,
+            clearFilters
         };
     }
 };
@@ -166,5 +208,36 @@ export default {
 <style scoped>
 .filters {
     margin-bottom: 16px;
+    padding-top: 20px; /* Adjusted padding for the top area */
+}
+
+.custom-date-input {
+    margin-right: 8px;
+    padding: 8px;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+}
+
+.custom-input {
+    margin-right: 8px;
+    padding: 8px;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+}
+
+.btn-success {
+    background-color: #52c41a;
+    color: #fff;
+    border-color: #52c41a;
+}
+
+.btn-warning {
+    background-color: #faad14;
+    color: #fff;
+    border-color: #faad14;
+}
+
+.btn-refresh {
+    margin-left: 8px;
 }
 </style>
