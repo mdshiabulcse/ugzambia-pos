@@ -388,6 +388,7 @@ import ImportUsers from "../../../common/core/ui/Import.vue";
 import datatable from "../../../common/composable/datatable";
 import UserTransaction from "./details/UserTransaction.vue";
 import axios from "axios";
+import API_ROUTES from '../../../main/config/apiRoute.js';
 
 export default {
     components: {
@@ -558,7 +559,7 @@ export default {
 
         onMounted(async () => {
             try {
-                const response = await axios.get('https://api.ugzambia.net/api/data-import-latest-period');
+                const response = await axios.get(API_ROUTES.BASE_URL+'/data-import-latest-period');
                 // const response = await axios.get('http://127.0.0.1:8001/api/data-import-latest-period');
                 importPeriods.value = response.data.import_period;
             } catch (error) {

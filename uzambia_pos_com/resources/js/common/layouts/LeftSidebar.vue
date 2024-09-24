@@ -28,12 +28,12 @@
         <div v-else>
             <img
                 :style="{
-                    width: '150px',
-                    height: '53px',
-                    paddingLeft: appSetting.rtl ? '0px' : '30px',
-                    paddingRight: appSetting.rtl ? '30px' : '0px',
-                    paddingTop: '5px',
-                    paddingBottom: '20px',
+                    width: '120px',
+                    height: '110px',
+                    paddingLeft: appSetting.rtl ? '0px' : '5px',
+                    paddingRight: appSetting.rtl ? '10px' : '0px',
+                    paddingTop: '1px',
+                    paddingBottom: '10px',
                     marginLeft: appSetting.rtl ? '0px' : '10px',
                     marginRight: appSetting.rtl ? '10px' : '0px',
                 }"

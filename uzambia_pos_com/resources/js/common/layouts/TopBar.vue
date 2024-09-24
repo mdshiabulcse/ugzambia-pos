@@ -8,6 +8,9 @@
             </a-col>
             <a-col :span="20">
                 <HeaderRightIcons>
+                    <p class="header-title">
+                        Zambia Union of Government and Allied Workers (UG)
+                    </p>
                     <a-space>
                         <template v-if="innerWidth > 768">
                             <component
@@ -36,7 +39,7 @@
                                 <ShoppingCartOutlined />
                                 <span>{{ $t("menu.pos") }}</span>
                             </a-button>
-                          
+
                             <a-divider type="vertical" />
                         </template>
                         <template v-if="selectedWarehouse && selectedWarehouse.name">

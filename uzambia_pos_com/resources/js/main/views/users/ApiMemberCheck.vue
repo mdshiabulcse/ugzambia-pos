@@ -137,6 +137,7 @@ import { ref, onMounted, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import axios from 'axios';
 import AdminPageHeader from '../../../common/layouts/AdminPageHeader.vue';
+import API_ROUTES from '../../../main/config/apiRoute.js';
 
 
 export default {
@@ -171,7 +172,7 @@ export default {
             console.log('fetchData called');  // Added log here to ensure function is executed
             loading.value = true;
             try {
-                const response = await axios.get('https://api.ugzambia.net/api/all-data-get', {
+                const response = await axios.get(API_ROUTES.BASE_URL+'/all-data-get', {
                     params: {
                         search,
                         currentPeriod,
@@ -196,7 +197,7 @@ export default {
 
         const fetchImportPeriods = async () => {
             try {
-                const response = await axios.get('https://api.ugzambia.net/api/data-import-period');
+                const response = await axios.get(API_ROUTES.BASE_URL+'/data-import-period');
                 // Only keep valid 6-digit periods
                 const periods = response.data.import_period.filter(period => /^[0-9]{6}$/.test(period));
                 importPeriods.value = periods;

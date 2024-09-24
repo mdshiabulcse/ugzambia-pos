@@ -29,6 +29,12 @@ const HeaderRightIcons = Styled("div", props)`
 	display: flex;
 	justify-content: flex-end;
 	align-items: center;
+	 .header-title {
+        font-size: 15px;
+        margin-right: 12px; /* Space between title and icons */
+        color: #333; /* Adjust the color as needed */
+        /* Add any additional styles you want for the title here */
+    }
 `;
 
 const MainHeader = Styled("div", props)`
